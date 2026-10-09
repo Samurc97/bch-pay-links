@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BCH Pay Links — Live Demo</title>
+<style>
+  :root {
+    --bg: #f2f7f4;
+    --card: #ffffff;
+    --border: #dbe9e1;
+    --input-bg: #eef5f1;
+    --primary: #0ac18e;
+    --primary-dark: #078f68;
+    --primary-soft: rgba(10,193,142,.12);
+    --text: #10231b;
+    --muted: #5f7a6c;
+    --mono-text: #33473c;
+    --amber: #c98a0a;
+    --amber-soft: rgba(201,138,10,.12);
+    --red: #d64545;
+    --red-soft: rgba(214,69,69,.1);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 64px;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 20px; }
+  header h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: .5px; }
+  header h1 .bolt { color: var(--primary); }
+  header p { margin: 0; color: var(--muted); }
+  .banner {
+    border: 1px dashed var(--primary-dark); border-radius: 10px;
+    padding: 10px 14px; margin: 16px 0; font-size: 13px; color: var(--muted);
+    background: var(--primary-soft);
+  }
+  .banner strong { color: var(--primary-dark); }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px; margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(16,35,27,.06);
+  }
+  .card.locked { opacity: .45; }
+  .step { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .step .num {
+    flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--primary); color: #fff; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+  }
+  .step h2 { margin: 0; font-size: 19px; }
+  .desc { color: var(--muted); font-size: 14px; margin: 6px 0 14px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  input, select {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--input-bg); color: var(--text);
+    font-size: 15px;
+  }
+  input:focus, select:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+  input:disabled { opacity: .6; }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  button {
+    cursor: pointer; border: none; border-radius: 9px;
+    padding: 12px 18px; font-size: 15px; font-weight: 600; margin-top: 14px;
+  }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--muted); }
+  .btn-demo {
+    background: transparent; color: var(--primary-dark); border: 1px dashed var(--primary);
+    font-size: 13px; padding: 9px 14px;
+  }
+  .btn-demo:hover:not(:disabled) { background: var(--primary-soft); }
+  .tag {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .6px;
+    text-transform: uppercase; color: #fff; background: var(--primary);
+    border-radius: 4px; padding: 2px 6px; vertical-align: middle; margin-left: 6px;
+  }
+  .qrbox { text-align: center; margin: 14px 0; }
+  .qrbox img {
+    width: 220px; height: 220px; background: #fff; padding: 12px;
+    border-radius: 12px; border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(16,35,27,.08);
+  }
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px; word-break: break-all; color: var(--mono-text);
+    background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; margin: 8px 0;
+  }
+  .kv { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; margin: 4px 0; }
+  .kv .k { color: var(--muted); }
+  .kv .v { font-weight: 600; text-align: right; }
+  .pill {
+    display: inline-block; padding: 6px 16px; border-radius: 999px;
+    font-weight: 700; font-size: 14px; letter-spacing: 1px;
+  }
+  .pill.pending { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber); animation: pulse 1.6s infinite; }
+  .pill.paid { background: var(--primary-soft); color: var(--primary-dark); border: 1px solid var(--primary); animation: none; }
+  .pill.expired { background: var(--red-soft); color: var(--red); border: 1px solid var(--red); animation: none; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+  .center { text-align: center; margin: 12px 0; }
+  .ok { color: var(--primary-dark); font-weight: 600; }
+  .err {
+    display: none; background: var(--red-soft); border: 1px solid var(--red);
+    color: #a83232; border-radius: 10px; padding: 10px 14px; margin: 12px 0; font-size: 14px;
+  }
+  .hidden { display: none !important; }
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 28px; }
+  footer a { color: var(--primary-dark); }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="bolt">⚡</span> BCH Pay Links</h1>
+    <p>Accept Bitcoin Cash with payment links — live demo</p>
+  </header>
+
+  <div id="demoBanner" class="banner hidden">
+    <strong>Demo mode</strong> · mock chain · no real BCH moves.
+    Buttons marked <span class="tag">demo only</span> simulate a wallet / payment so you can see the full flow.
+  </div>
+  <div id="liveBanner" class="banner hidden">
+    Live mode: connect a real WizardConnect wallet and pay with real BCH.
+  </div>
+
+  <div id="err" class="err"></div>
+
+  <!-- Step 1 -->
+  <section class="card" id="card1">
+    <div class="step"><div class="num">1</div><h2>Connect your wallet</h2></div>
+    <p class="desc">Register as a merchant and pair your own wallet via WizardConnect.
+      The server only ever stores your public key (xpub) — never your seed.</p>
+    <label for="mname">Merchant name</label>
+    <input id="mname" value="Demo Merchant" maxlength="60" autocomplete="off">
+    <div class="row">
+      <button class="btn-primary" id="btnPair">Pair wallet</button>
+    </div>
+    <div id="pairingBox" class="hidden">
+      <div class="qrbox hidden" id="pairQrWrap"><img id="pairQr" alt="Pairing QR code"></div>
+      <div class="mono hidden" id="pairUri"></div>
+      <p class="desc" id="pairInstr"></p>
+      <p class="desc"><span class="spinner"></span><span id="pairStatus">Waiting for wallet…</span></p>
+      <button class="btn-demo hidden" id="btnSimPair">Simulate pairing<span class="tag">demo only</span></button>
+    </div>
+    <p class="ok hidden" id="pairedOk">✓ Wallet paired</p>
+    <div class="mono hidden" id="pairedXpub"></div>
+  </section>
+
+  <!-- Step 2 -->
+  <section class="card locked" id="card2">
+    <div class="step"><div class="num">2</div><h2>Create payment link</h2></div>
+    <p class="desc">A fresh on-chain address is derived from your wallet for every link.</p>
+    <div class="row">
+      <div>
+        <label for="amount">Amount</label>
+        <input id="amount" type="number" min="0" step="any" value="5" inputmode="decimal">
+      </div>
+      <div>
+        <label for="currency">Currency</label>
+        <select id="currency">
+          <option value="USD" selected>USD</option>
+          <option value="BCH">BCH</option>
+        </select>
+      </div>
+    </div>
+    <label for="descr">Description</label>
+    <input id="descr" value="Order #123" maxlength="120" autocomplete="off">
+    <button class="btn-primary" id="btnCreate" disabled>Create payment link</button>
+    <div id="linkBox" class="hidden">
+      <div class="qrbox"><img id="linkQr" alt="Payment QR code"></div>
+      <div class="mono" id="payUri"></div>
+      <div class="kv"><span class="k">Amount</span><span class="v" id="amtLine"></span></div>
+      <div class="kv"><span class="k">Address</span><span class="v mono" id="addrLine" style="border:none;background:none;padding:0"></span></div>
+      <div class="kv"><span class="k">Expires in</span><span class="v" id="expiry"></span></div>
+    </div>
+  </section>
+
+  <!-- Step 3 -->
+  <section class="card locked hidden" id="card3">
+    <div class="step"><div class="num">3</div><h2>Watch it confirm</h2></div>
+    <p class="desc">The background poller watches the address on-chain and flips the link to paid.</p>
+    <div class="center"><span class="pill pending" id="statusPill">PENDING</span></div>
+    <div class="center hidden" id="paidBox">
+      <div class="kv"><span class="k">Transaction</span><span class="v mono" id="txidLine" style="border:none;background:none;padding:0"></span></div>
+      <div class="kv"><span class="k">Paid at</span><span class="v" id="paidAtLine"></span></div>
+    </div>
+    <div class="center">
+      <button class="btn-demo hidden" id="btnSimPay">Simulate payment<span class="tag">demo only</span></button>
+    </div>
+  </section>
+
+  <footer>
+    Built for <a href="https://dorahacks.io/hackathon/bchblaze2026/detail" target="_blank" rel="noopener">BCH Blaze 2026</a> · Mainnet Track
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var merchantId = null;
+  var linkId = null;
+  var linkExpiresAt = 0;
+  var demoMode = false;
+  var pairTimer = null;
+  var statusTimer = null;
+  var countdownTimer = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function showError(msg) {
+    var e = $('err');
+    e.textContent = msg;
+    e.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function clearError() { $('err').style.display = 'none'; }
+
+  function fmtSats(n) { return Number(n).toLocaleString('en-US') + ' sats'; }
+  function fmtBch(n) {
+    var s = Number(n).toFixed(8).replace(/0+$/, '').replace(/\.$/, '.0');
+    return s + ' BCH';
+  }
+  function trunc(s, n) {
+    s = String(s || '');
+    return s.length > n ? s.slice(0, n) + '…' : s;
+  }
+
+  async function api(method, path, body) {
+    var opts = { method: method, headers: { 'Content-Type': 'application/json' } };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    var res = await fetch(path, opts);
+    var data = null;
+    try { data = await res.json(); } catch (e) { /* non-JSON */ }
+    if (!res.ok) {
+      var msg = (data && (data.detail || data.error)) || ('Request failed (' + res.status + ')');
+      var err = new Error(msg);
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  }
+
+  function setBusy(btn, busy, label) {
+    btn.disabled = busy;
+    if (label !== undefined) btn.dataset.label = btn.innerHTML;
+    if (busy) btn.innerHTML = '<span class="spinner"></span>Working…';
+    else if (btn.dataset.label) btn.innerHTML = btn.dataset.label;
+  }
+
+  /* ---------- step 1: pairing ---------- */
+
+  async function pairWallet() {
+    clearError();
+    var btn = $('btnPair');
+    setBusy(btn, true);
+    try {
+      var name = ($('mname').value || 'Demo Merchant').trim();
+      var m = await api('POST', '/merchants', { name: name });
+      merchantId = m.id;
+      $('pairingBox').classList.remove('hidden');
+      btn.disabled = true;
+      $('mname').disabled = true;
+
+      if (m.pairing && m.pairing.qrData) {
+        $('pairQr').src = m.pairing.qrData;
+        $('pairQrWrap').classList.remove('hidden');
+      }
+      if (m.pairing && m.pairing.qrUri) {
+        $('pairUri').textContent = trunc(m.pairing.qrUri, 80);
+        $('pairUri').classList.remove('hidden');
+      }
+      if (m.pairing && m.pairing.instructions) {
+        $('pairInstr').textContent = m.pairing.instructions;
+      } else if (m.pairing && m.pairing.mode === 'wizardconnect') {
+        $('pairInstr').textContent = 'Scan the QR with a WizardConnect-compatible wallet to complete pairing.';
+      }
+      if (demoMode) $('btnSimPair').classList.remove('hidden');
+      pollPairing();
+    } catch (e) {
+      showError('Could not start pairing: ' + e.message);
+      setBusy(btn, false);
+    }
+  }
+
+  function pollPairing() {
+    clearInterval(pairTimer);
+    pairTimer = setInterval(async function () {
+      try {
+        var m = await api('GET', '/merchants/' + merchantId);
+        if (m.status === 'paired') {
+          clearInterval(pairTimer);
+          onPaired(m);
+        }
+      } catch (e) { /* keep polling */ }
+    }, 3000);
+  }
+
+  function onPaired(m) {
+    $('pairStatus').textContent = '';
+    $('pairingBox').classList.add('hidden');
+    $('pairedOk').classList.remove('hidden');
+    var xp = $('pairedXpub');
+    xp.textContent = 'xpub: ' + trunc(m.xpub, 48);
+    xp.classList.remove('hidden');
+    $('card2').classList.remove('locked');
+    $('btnCreate').disabled = false;
+    $('card2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function simulatePairing() {
+    clearError();
+    var btn = $('btnSimPair');
+    setBusy(btn, true);
+    try {
+      var dx = await api('GET', '/demo/test-xpub');
+      var m = await api('POST', '/merchants/' + merchantId + '/pair', { xpub: dx.xpub });
+      clearInterval(pairTimer);
+      onPaired(m);
+    } catch (e) {
+      if (e.status === 409) {
+        // Already paired (e.g. relay paired it first) — just refresh.
+        try {
+          var m2 = await api('GET', '/merchants/' + merchantId);
+          clearInterval(pairTimer);
+          onPaired(m2);
+        } catch (e2) { showError('Pairing check failed: ' + e2.message); }
+      } else if (e.status === 404) {
+        showError('Demo endpoints are not enabled. Restart the server with USE_MOCK_CHAIN=true.');
+      } else {
+        showError('Simulated pairing failed: ' + e.message);
+      }
+    } finally {
+      setBusy(btn, false);
+    }
+  }
+
+  /* ---------- step 2: create link ---------- */
+
+  async function createLink() {
+    clearError();
+    var btn = $('btnCreate');
+    var amount = parseFloat($('amount').value);
+    if (!isFinite(amount) || amount <= 0) {
+      showError('Enter a positive amount.');
+      return;
+    }
+    setBusy(btn, true);
+    try {
+      var link = await api('POST', '/links', {
+        amount: amount,
+        currency: $('currency').value,
+        description: ($('descr').value || '').trim(),
+        merchantId: merchantId,
+      });
+      linkId = link.id;
+      $('linkQr').src = link.qrData;
+      $('payUri').textContent = link.paymentUri;
+      $('amtLine').textContent = fmtBch(link.amountBch) + '  (' + fmtSats(link.amountSats) + ')';
+      $('addrLine').textContent = link.bchAddress;
+      linkExpiresAt = new Date(link.expiresAt).getTime();
+      $('linkBox').classList.remove('hidden');
+      $('card3').classList.remove('hidden');
+      $('card3').classList.remove('locked');
+      if (demoMode) $('btnSimPay').classList.remove('hidden');
+      startCountdown();
+      pollStatus();
+      setBusy(btn, false);
+      btn.disabled = true; // one link per demo run keeps step 3 simple
+      $('card3').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      var hint = e.status === 502
+        ? ' (Could not fetch the BCH/USD rate — try currency "BCH" instead.)'
+        : '';
+      showError('Could not create the link: ' + e.message + hint);
+      setBusy(btn, false);
+    }
+  }
+
+  function startCountdown() {
+    clearInterval(countdownTimer);
+    var el = $('expiry');
+    function tick() {
+      var ms = linkExpiresAt - Date.now();
+      if (ms <= 0) { el.textContent = 'expired'; clearInterval(countdownTimer); return; }
+      var s = Math.floor(ms / 1000);
+      var mm = String(Math.floor(s / 60)).padStart(2, '0');
+      var ss = String(s % 60).padStart(2, '0');
+      el.textContent = mm + ':' + ss;
+    }
+    tick();
+    countdownTimer = setInterval(tick, 1000);
+  }
+
+  /* ---------- step 3: status ---------- */
+
+  function setPill(state) {
+    var pill = $('statusPill');
+    pill.className = 'pill ' + state.toLowerCase();
+    pill.textContent = state;
+  }
+
+  function pollStatus() {
+    clearInterval(statusTimer);
+    statusTimer = setInterval(async function () {
+      try {
+        var l = await api('GET', '/links/' + linkId);
+        if (l.status === 'paid') {
+          clearInterval(statusTimer);
+          setPill('paid');
+          $('txidLine').textContent = trunc(l.txid, 40);
+          $('txidLine').title = l.txid;
+          $('paidAtLine').textContent = new Date(l.paidAt).toLocaleString();
+          $('paidBox').classList.remove('hidden');
+          $('btnSimPay').disabled = true;
+        } else if (l.status === 'expired') {
+          clearInterval(statusTimer);
+          setPill('expired');
+          $('btnSimPay').disabled = true;
+        }
+      } catch (e) { /* keep polling */ }
+    }, 3000);
+  }
+
+  async function simulatePayment() {
+    clearError();
+    var btn = $('btnSimPay');
+    setBusy(btn, true);
+    try {
+      await api('POST', '/links/' + linkId + '/simulate-payment');
+      btn.innerHTML = 'Payment sent — waiting for the poller…';
+      // The poller flips the link to paid on its next tick.
+    } catch (e) {
+      if (e.status === 404) {
+        showError('Demo endpoints are not enabled. Restart the server with USE_MOCK_CHAIN=true.');
+      } else {
+        showError('Simulated payment failed: ' + e.message);
+      }
+      setBusy(btn, false);
+    }
+  }
+
+  /* ---------- init ---------- */
+
+  $('btnPair').addEventListener('click', pairWallet);
+  $('btnSimPair').addEventListener('click', simulatePairing);
+  $('btnCreate').addEventListener('click', createLink);
+  $('btnSimPay').addEventListener('click', simulatePayment);
+
+  // Detect demo mode: /demo/test-xpub only exists with USE_MOCK_CHAIN=true.
+  fetch('/demo/test-xpub').then(function (res) {
+    demoMode = res.ok;
+    $(demoMode ? 'demoBanner' : 'liveBanner').classList.remove('hidden');
+  }).catch(function () {
+    $('liveBanner').classList.remove('hidden');
+  });
+})();
+</script>
+</body>
+</html>
